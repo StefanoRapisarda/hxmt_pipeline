@@ -1,0 +1,575 @@
+import os
+import sys
+sys.path.append('/home/stefano/science/software/HXMT_pipeline/functions')
+import my_funcs as mf
+
+import glob
+import numpy as np
+
+def check_exp_format(exp):
+    if exp[0] != 'P':
+        print('Exposure folder name does not begin with P')
+        return False
+    tmp = exp.split('-')
+    if len(tmp[-1]) != 2:
+        print('The last two digits of the exposure folder are supposed to be two')
+        return False
+    if len(tmp[-2]) != 2:
+        print('The digits after the date are supposed to be two')
+        return False    
+    if len(tmp[-3]) != 8:
+        print('Date format is wrong')
+        return False       
+    if len(tmp[0]) != 13:
+        print('Exposure ID format is wrong')
+        return False     
+    return True
+
+def check_and_choose(path,inc,ext):
+    '''
+    List items according to specified criteria and returns the last one
+    after sorting
+    '''
+    items = mf.list_items(path,opt=2,include=inc,ext=ext)
+    #print(items)
+    if len(items) != 1:
+        print('There is more than one file containing {} in {}'.format(inc,path))
+        items = sorted(items)
+        print('Choosing {}'.format(items[-1]))
+        return os.path.joint(path,items[-1])
+    elif len(items) == 0:
+        print('There are no files containing {} in {}'.format(inc,path))
+        return
+    else:
+        return os.path.join(path,items[0])
+
+def he_cal(full_exp_dir,out_dir = 'reduced_products'):
+    '''
+    Function calling the HXMT tool hepical.
+    It checks the correct folder name, the existance of the event files, and
+    the output file
+    
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder
+    out_dir: string (optional)
+                  Name of the outout products folder. This will be created inside
+                  full_exp_dir/HE
+                  
+    RETURNS
+    -------
+    outfile: string
+                  The full path of the calibrated file. If some of the operations
+                  is not successfull, it returns False.
+    '''
+    # hepical needs only the raw evt file and performs Calibration. In particular it removes the spikes
+    # due to electronics and compute the PI values for each HE event.
+    
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('cal_he requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1] 
+    
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir): 
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return 
+    exp_ID = exp_dir.split('-')[0]
+    
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
+    
+    # Initializing and checking existance of input files (event files) 
+    evt = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-Evt',ext='.FITS')
+    if not evt:
+        print('There is not event file for HE')
+        return False
+    
+    # Initializing output file
+    outfile = os.path.join(destination,'HXMT_{}_HE_evt_cal.fits'.format(exp_ID))
+    
+    # Running calibration
+    cmd = 'hepical evtfile={} outfile={} glitchfile={}/HE_spikes.fits clobber=yes'.format(
+    evt,outfile,destination)
+    os.system(cmd)
+    
+    # Verifing successful running
+    if not os.path.isfile(outfile):
+        print('he_cal output file was not created')
+        return False
+    
+    return outfile
+
+def he_gti(full_exp_dir,out_dir='reduced_products'):
+    '''
+    It runs the HXMT tool he_gti
+
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder
+    out_dir: string (optional)
+                  Name of the outout products folder. This will be created inside
+                  full_exp_dir/HE
+
+    RETURNS
+    -------
+    outfile: string
+                  The full path of the calibrated file. If some of the operations
+                  is not successfull, it returns False.
+    '''
+    # hegtigen works similarly to NICER nimaketime, i.e. it generates a fits file of good time intervals
+    # according to certain screening criteria
+    # It needs a high voltave file, temperature file, and particle monitor file (HE folder), and a house
+    # keeping file (AUX folder)
+
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('cal_he requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1]
+
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir):
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return
+    exp_ID = exp_dir.split('-')[0]
+
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
+
+    # Initializing and checking existance of input files
+    # -------------------------------------------------------------------------------
+    # high voltage file
+    hv = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-HV',ext='.FITS')
+    if not hv:
+        print('High voltage file for HE missing')
+        return
+    # Temperature file
+    temp = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-TH',ext='.FITS')
+    if not temp:
+        print('Temperature file for HE is missing')
+        return
+    # ehk file
+    ehk = check_and_choose(os.path.join(full_exp_dir,'AUX'),inc='_EHK_',ext='.FITS')
+    if not ehk:
+        print('Extend houskeeping data is missing')
+        return
+    # pm file
+    pm = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-PM',ext='.FITS')
+    if not pm:
+        print('Particle monitoring file is missing')
+        return
+    # -------------------------------------------------------------------------------
+
+    # Initializing outfile
+    outfile=os.path.join(destination,'HXMT_{}_HE_gti.fits'.format(exp_ID))
+
+    # Running screening
+    cmd = 'hegtigen hvfile={} tempfile={} pmfile={} ehkfile={} outfile={} \
+    defaultexpr=NONE expr="ELV>10&&COR>8&&SAA_FLAG==0&&TN_SAA>300&&T_SAA>300&&ANG_DIST<=0.04" \
+    pmexpr="" clobber=yes history=yes'.format(hv,temp,pm,ehk,outfile)
+    os.system(cmd)
+
+    # Verifing successful running
+    if not os.path.isfile(outfile):
+        print('he_gti output file was not created')
+        return
+
+    return outfile
+
+
+def he_screen(full_exp_dir,cal_evt='',gti='',out_dir = 'reduced_products',
+             minpi=0,maxpi=255):
+    '''
+    It runs the HXMT tool he_screen
+
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder
+    cal_evt: string
+                  Calibrated event file (output of hepical) with its full path
+    gti: string
+                  GTI file (output of hegtigen) with its full path
+    out_dir: string (optional)
+                  Name of the outout products folder. This will be created inside
+                  full_exp_dir/HE
+    minpi: integer (optional)
+                  Minimum energy channel, default is 0
+    maxpi: integer (optiona)
+                  Maximum energy channel, defaule is 255
+
+    RETURNS
+    -------
+    outfile: string
+                  The full path of the screened file. If some of the operations
+                  is not successfull, it returns False.
+
+    '''
+
+
+    # hescreen uses the previously creted GTI file to remove photons from the previously created
+    # calibrated event file. In this stage events can be also discriminated according to the pulse shape
+    # As the input of hescreen are products created by other function, we do not need to check
+    # if the input files exist. This is supposed to be done by previous lines in
+    # the code
+
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('cal_he requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1]
+
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir):
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return
+    exp_ID = exp_dir.split('-')[0]
+
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
+
+    # Initializing outfile
+    outfile=os.path.join(destination,'HXMT_{}_HE_screen.fits'.format(exp_ID))
+
+    # Running hescreen
+    cmd = 'hescreen evtfile={} gtifile={} outfile={} \
+    userdetid="0-17" eventtype=1 anticoincidence=yes \
+    starttime=0 stoptime=0 minPI={} maxPI={}  clobber=yes history=yes'.\
+    format(cal_evt,gti,outfile,minpi,maxpi)
+    os.system(cmd)
+
+    # Verifing successful running
+    if not os.path.isfile(outfile):
+        print('he_screen output file was not created')
+        return
+
+    return outfile
+
+def he_genspec(full_exp_dir,evt,out_dir='reduced_products'):
+    '''
+    It computes an energy spectrum for each detector
+    
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder
+    evt: string (optional)
+                  Screaned and calibrated event file
+    out_dir: string (optional)
+                  Name of the outout products folder. This will be created inside
+                  full_exp_dir/HE   
+                  
+    RETURNS
+    -------
+    outfiles: list
+                  List of the energy spectra created with full path
+    '''
+    # hespecgen computes an energy spectrum for each detector and has as input the 
+    # calibrated and screened event file. The task needs a Dead time file
+    # This time the output keyword does not need extension, it is just the prefix 
+    # to the file
+    
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('cal_he requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1]
+    
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir): 
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return 
+    exp_ID = exp_dir.split('-')[0]
+    
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
+    
+    # Initializing outfile
+    outfile=os.path.join(destination,'HXMT_{}_HE_spec'.format(exp_ID))
+    
+    # Initializing and checking existance of input files
+    # Dead time file
+    dead = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-DTime',ext='.FITS')
+    if not dead:
+        print('Dead Time file for HE missing')
+        return
+    
+    # Running hespecgen
+    cmd = 'hespecgen evtfile={} outfile={} deadfile={} \
+    userdetid="0;1;2;3;4;5;6;7;8;9;10;11;12;13;14;15;16;17" eventtype=1 \
+    starttime=0 stoptime=0 minPI=0 maxPI=255 clobber=yes'.format(evt,outfile,dead)
+    os.system(cmd)
+    
+    # Verifing successful running
+    outfiles = []
+    for g in range(18):
+        if not os.path.isfile(outfile+'_g{0}_{0}.pha'.format(g)):
+            print(outfile+'_g{0}_{0}.pha'.format(g),'was not created')
+            return False
+        else:
+            outfiles += [outfile+'_g{0}_{0}.pha'.format(g)]
+
+    # Writing the energy spectra names into a text file (this will be necessary for computing
+    # the background qwith hebkgmap)
+    with open(os.path.join(destination,'energy_spectra.txt'),'w') as txt:
+        for f in outfiles:
+            txt.write(f+'\n')
+    
+    return outfiles
+
+def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products'):
+    '''
+    Generates a response file for each HE detector
+    
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder
+    spec_list: list
+                  List of the energy spectra 
+    out_dir: string (optional)
+                  Name of the outout products folder. This will be created inside
+                  full_exp_dir/HE   
+                  
+    RETURNS
+    -------    
+    outfiles: list
+                  List of the response files with their full path
+    '''
+    # This generates a response file for each energy spectrum
+    # It needs the energy spectrum and and the attitude file
+    
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('cal_he requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1]
+    
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir): 
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return 
+    exp_ID = exp_dir.split('-')[0]
+    
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
+    
+    # Initializing and checking existance of input files
+    # Attitude file
+    att = check_and_choose(os.path.join(full_exp_dir,'ACS'),inc='Att',ext='.FITS')
+    if not att:
+        print('Attitude file for HE missing')
+        return    
+
+    # Running herspgen
+    outfiles = []
+    for spec,i in zip(spec_list,range(18)):
+        if i == 16:continue 
+        outfile = os.path.join(destination,spec.replace('spec','rsp'))
+        cmd = "herspgen phafile={} outfile={} attfile={} ra=-1 dec=-91 clobber=yes".format(
+        spec,outfile,att)
+        os.system(cmd)
+        # Checking existance of the just created files
+        if not os.path.isfile(outfile):
+            print('he_genrsp output file {} was not created'.format(i))
+            return        
+        else:
+            outfiles += [outfile]
+
+    with open(os.path.join(destination,'energy_spectra_rsp.txt'),'w') as txt:
+        for f in outfiles:
+            txt.write(f+'\n')
+        
+    return outfiles  
+
+def he_genle(full_exp_dir,evt,
+             binsize=1,minpi=26,maxpi=120,det_ID='0-15, 17',
+             out_dir='reduced_products'):
+    '''
+    It computes a lightcurve
+    
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder
+    evt: string (optional)
+                  Screaned and calibrated event file
+    binsize: float (optional)
+                  Binsize of the lightcurve (time resolution). Default value is 1
+    minpi: integer (optional)
+                  Low energy channel. Default value is 26
+    maxpi: integer (optional)
+                  High energy channel. Default value is 120
+    det_ID: string (optional)
+                  String for selecting detectors. Single detectors or detector ranges
+                  (-) separated by come will be combined. When using semicolor, the
+                  script will generate different lightcurves
+    out_dir: string (optional)
+                  Name of the outout products folder. This will be created inside
+                  full_exp_dir/HE   
+                  
+    RETURNS
+    -------
+    outfile: string
+                  Name root of lightcurve(s)
+    '''
+    
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('cal_he requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1]
+    
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir): 
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return 
+    exp_ID = exp_dir.split('-')[0]
+    
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
+    
+    # Initializing outfile
+    outfile=os.path.join(destination,'HXMT_{}_HE_lc_ch{}-{}_{}s'.\
+                         format(exp_ID,minpi,maxpi,binsize))
+    
+    # Initializing and checking existance of input files
+    # Dead time file
+    dead = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-DTime',ext='.FITS')
+    if not dead:
+        print('Dead Time file for HE missing')
+        return
+    
+    # Running helcgen
+    cmd = 'helcgen evtfile={} outfile={} deadfile={} \
+    userdetid="{}" eventtype=1 minPI={} maxPI={} binsize={} clobber=yes'.\
+    format(evt,outfile,dead,det_ID,minpi,maxpi,binsize,destination)
+    os.system(cmd)
+
+    lc = glob.glob('{}/*.lc'.format(destination))
+    
+    # Verifing successful running
+    if len(lc)==0:
+        print('he_genle output file was not created')
+        return
+
+    # Writing light curve name into a text file (this will be necessary for computing
+    # the background qwith hebkgmap)
+    with open(os.path.join(destination,'light_curve.txt'),'w') as txt:
+        txt.write(lc[0]+'\n')
+    
+    return lc[0]
+
+def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products'):
+    '''
+    It computes background for either a lightcurve or an energy spectrum. The option
+    (lightcurve or spectrum) it is automatically recognize according to the extention
+    of the first file in the provided ascii text file
+    
+    PARAMETERS
+    ----------
+    full_exp_dir: string
+                  Full path of the esposure folder    
+    ascii_file: string
+                  Name of the text file either containing the energy spectra name or
+                  the lightcurve name
+    evt: string
+                  Name of the calibrated and screened event file
+    gti string
+                  Name of the gti file
+    out_dir: string (optional)
+                  Name of the output folder
+    '''
+    # hebkgmap needs spectrum or lightcurve, calibrated and screened event file, 
+    # ehk file, gti file, and deadtime file.
+    # It creates either a background file for each energy spectrum or a background 
+    # lightcurve
+        
+    # Checking that the input path corresponds to a full path
+    if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
+    tmp = full_exp_dir.split('/')
+    if len(tmp) == 1:
+        print('he_bkgmap requires full path for exp_dir')
+        return ''
+    exp_dir = tmp[-1]
+    
+    # Checking exposure folder format
+    if not check_exp_format(exp_dir): 
+        print('Something is wrong in the exposure folder name, check:')
+        print(exp_dir)
+        return 
+    exp_ID = exp_dir.split('-')[0]
+    
+    # Creating destination folder
+    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))   
+    
+    # Initializing and checking existance of input files
+    # ------------------------------------------------------------------------------------
+    # Dead time file
+    dead = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-DTime',ext='.FITS')
+    if not dead:
+        print('Dead Time file for HE missing')
+        return
+    # ehk file
+    ehk = check_and_choose(os.path.join(full_exp_dir,'AUX'),inc='_EHK_',ext='.FITS')
+    if not ehk:
+        print('Extend houskeeping data is missing')
+        return 
+    # ------------------------------------------------------------------------------------
+
+    # Checking the format of the input file
+    with open(os.path.join(destination,ascii_file),'r') as infile:
+        lines = infile.readlines()
+    if '.lc' in lines[0]: 
+        opt = 'lc'
+        minPI = 26
+        maxPI = 120
+    elif '.pha' in lines[0]: 
+        opt = 'spec'
+        minPI = 0
+        maxPI = 255
+    else:
+        print('File in the input list has not any recognizable format')
+        return False
+    
+    outfile=os.path.join(destination,'HXMT_{}_HE_{}_bkg'.format(exp_ID,opt))
+    
+    # Running hebkgmap  
+    cmd = 'hebkgmap {} {} {} {} {} {} {} {} {}'.format(opt,evt,ehk,gti,dead,
+                                              os.path.join(destination,ascii_file),minPI,maxPI,outfile)
+    os.system(cmd)
+    
+    bkgs = mf.list_items(destination,include='_HE_{}_bkg'.format(opt),opt=2)
+    if len(bkgs) != len(lines):
+        print('Something wrong happened, number of created backgrounds different from input files ({}/{})'.\
+              format(len(bkgs),len(lines)))
+        return
+
+    # Writing background files into a file (this will be needed by hhe_spec2pi)
+    with open(os.path.join(destination,'energy_spectra_bkg.txt'),'w') as txt:
+        for bkg in bkgs:
+            txt.write(bkg+'\n')
+
+    return bkgs

@@ -1,0 +1,132 @@
+import sys
+import os
+sys.path.append('/home/stefano/science/software/HXMT_pipeline/functions')
+
+import hxmt_funcs as hxmt
+import my_funcs as mf
+
+import numpy as np
+import datetime
+
+import tkinter
+from tkinter import filedialog
+
+import logging
+
+now = datetime.datetime.now()
+date = ('%d_%d_%d') % (now.day,now.month,now.year)
+time = ('%d_%d') % (now.hour,now.minute)
+
+args = sys.argv
+script = args[0]
+logger_name = '{}_D{}_T{}.log'.format(script,date,time)
+#mf.initialize_logger(logger_name)
+
+root = tkinter.Tk()
+root.withdraw()
+# DF contains all the compressed data
+df = filedialog.askdirectory(initialdir='/media/QNAP_40T_HD/HXMTdata_version20191205',
+                             title='Select one of the sources')
+target = os.path.basename(df)
+
+# This is the folder where I will store unzipped data and reduced products
+there = '/media/3HD/stefano'
+rdf = mf.create_dir(target,there)
+logs = mf.create_dir('logs',rdf)
+
+# Listing and extracting data
+if 'extract' in args:
+    data_list = mf.list_items(df,opt=2,ext='taz',exclude=['.txt','.log'])
+    for data in data_list:
+        cmd = f'tar xvf {df}/{data} -C {rdf}'
+        os.system(cmd)
+
+# At this point data should be organized in proposal-observation-exposure folders inside rdf
+proposals = mf.list_items(rdf,opt=1)
+
+for proposal in proposals:
+    
+    logging.info(f'Processing proposal {proposal}')
+    logging.info('='*80)
+    
+    prop_folder = os.path.join(rdf,proposal)
+    observations = mf.list_items(prop_folder,opt=1)
+    logging.info(f'There are {len(observations)} observations.\n')
+    for observation in observations:
+
+        logging.info(f'Processing observation {observation}')
+        logging.info('-'*80)
+        
+        obs_folder = os.path.join(prop_folder,observation)
+        exposures = mf.list_items(obs_folder,opt=1,exclude=['ACS','AUX'])
+
+        logging.info(f'There are {len(exposures)} exposures\n')
+        for exposure in exposures:
+
+            logging.info(f'Processing exposure {exposure}')
+            logging.info('*'*80)
+            wf = os.path.join(obs_folder,exposure)
+            print(wf)
+            
+            # Data reduction:
+            # 1) Calibration
+            cal = hxmt.he_cal(wf)
+            if cal:
+                logging.info('1) Calibration successfully perfomed')
+            else:
+                logging.info('1) Calibration not perfomed')
+
+            # 2) GTI computation
+            gti = hxmt.he_gti(wf)
+            if gti:
+                logging.info('2) GTI successfully computed')
+            else:
+                logging.info('2) GTI not computed')
+                             
+            # 3) Data screening
+            screen = hxmt.he_screen(wf,cal,gti)
+            if screen:
+                logging.info('3) Screening successfully performed')
+            else:
+                logging.info('3) Screening not perfomed')                             
+
+            # 4) Computing energy spectrum
+            spectrum = hxmt.he_genspec(wf,screen)
+            if spectrum:
+                logging.info('4) Energy spectrum successfully computed')
+            else:
+                logging.info('4) Energy spectrum not computed')
+
+            # 5) Generate response file
+            rsp = hxmt.he_genrsp(wf,spectrum)
+            if rsp:
+                logging.info('5) Response file sucessfully computed')
+            else:
+                logging.info('5) Response file not computed')
+                             
+            # 6) Computing lightcurve
+            lc = hxmt.he_genle(wf,screen)
+            if lc:
+                logging.info('6) Lightcurve successfully computed')
+            else:
+                logging.info('6) Lightcurve not computed')
+                             
+            # 7) Computing energy spectrum background
+            spec_bkg = hxmt.he_bkgmap(wf,'energy_spectra.txt',screen,gti)
+            if spec_bkg:
+                logging.info('7) Energy spectrum background successfully computed')
+            else:
+                logging.info('7) Energy spectrum background not computed')
+                             
+            # 8) Computing lightcurve background
+            lc_bkg = hxmt.he_bkgmap(wf,'light_curve.txt',screen,gti)
+            if lc_bkg:
+                logging.info('8) Lightcurve successfully computed')
+            else:
+                logging.info('8) Lightcurve not computed')
+
+            logging.info('*'*80+'\n')
+        logging.info('-'*80+'\n')
+    logging.info('='*80+'\n')
+     
+os.system(f'mv {logger_name} {logs}')
