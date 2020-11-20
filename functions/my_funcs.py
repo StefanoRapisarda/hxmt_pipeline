@@ -1,4 +1,7 @@
 import os
+import sys
+import sysconfig
+import logging
 
 def create_dir(dir_name,path=os.getcwd()):
     '''
@@ -199,22 +202,45 @@ def list_items(wf=os.getcwd(),opt=1,ext='',include=[],include_all=[],exclude=[],
 
     return sel_list4
 
+def initialize_logger(log_name=False,level=logging.DEBUG):
+    '''
+    Initialize logging options to pring log messages on the screen
+    and on a file (if log_name is specified)
 
-def initialize_logger(log_name=False):
+    HISTORY
+    -------
+    unknown   , Stefano Rapisarda (SHAO), creation date
+    2020 09 23, Stefano Rapisarda (Uppsala), efficiency improved
+    '''
+
+    # Creating an instance of the object logger
     logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(level)
 
-    # create console handler and set level to info
-    handler = logging.StreamHandler()
-    handler.setLevel(logging.DEBUG)
+    # Setting a format for the log
     formatter = logging.Formatter('%(levelname)s: %(asctime)s: %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
 
     if log_name:
-        # create error file handler
-        handler = logging.FileHandler(log_name,"w", encoding=None, delay="true")
-        handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('%(levelname)s: %(asctime)s: %(message)s')
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
+        logging.basicConfig(level=level,
+                            format='%(levelname)s: %(asctime)s: %(message)s',
+                            datefmt='%Y-%m-%d %H:%M:%S',
+                            filename=log_name+'.log',
+                            filemode='w')
+
+    # Creating the log handler
+    #handler = logging.StreamHandler(stream=sys.stderr)
+    handler = logging.StreamHandler(stream=sys.stderr)
+    handler.setLevel(logging.DEBUG)
+    handler.setFormatter(formatter) 
+
+    # Configuring the logger with the handler
+    logger.addHandler(handler)   
+
+    #if log_name:
+        
+    #    handler = logging.FileHandler(log_name,"w", encoding=None, delay="true")
+    #    handler.setLevel(logging.DEBUG)
+    #    handler.setFormatter(formatter)
+    #    logger.addHandler(handler)
+
+    return logger

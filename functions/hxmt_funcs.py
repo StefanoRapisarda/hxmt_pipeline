@@ -1,6 +1,6 @@
 import os
 import sys
-from .my_funcs import create_dir
+from my_funcs import create_dir
 
 import glob
 import numpy as np
@@ -73,7 +73,7 @@ def check_and_choose(path=os.getcwd(),inc='',ext=''):
         items = sorted([item for item in items if os.path.isfile(item)])      
 
     #print(items)
-    if len(items) != 1:
+    if len(items) > 1:
         logging.info('There is more than one file containing {} in {}'.format(inc,path))
         logging.info('Choosing {}'.format(items[-1]))
         return items[-1]
@@ -158,13 +158,13 @@ def he_cal(full_exp_dir,out_dir = 'reduced_products',override=False):
             return 
 
         # Running calibration
-        cmd = 'hepical evtfile={} outfile={} glitchfile={}/HE_spikes.fits '\ 
+        cmd = 'hepical evtfile={} outfile={} glitchfile={}/HE_spikes.fits '\
             'clobber=yes'.format(evt,outfile,destination)
         os.system(cmd)
 
         # Verifing successful running
         if not os.path.isfile(outfile):
-            print('he_cal output file was NOT created')
+            logging.info('he_cal output file was NOT created')
             return         
     
     return outfile
@@ -210,19 +210,19 @@ def he_gti(full_exp_dir,out_dir='reduced_products',override=False):
     if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
     tmp = full_exp_dir.split('/')
     if len(tmp) == 1:
-        print('he_gti requires full path for exp_dir')
+        logging.info('he_gti requires full path for exp_dir')
         return ''
     exp_dir = tmp[-1]
 
     # Checking exposure folder format
     if not check_exp_format(exp_dir):
-        print('Something is wrong in the exposure folder name, check:')
-        print(exp_dir)
+        logging.info('Something is wrong in the exposure folder name, check:')
+        logging.info(exp_dir)
         return
     exp_ID = exp_dir.split('-')[0]
 
     # Creating destination folder
-    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
+    destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
 
     # Initializing outfile
     outfile=os.path.join(destination,'HXMT_{}_HE_gti.fits'.format(exp_ID))
@@ -241,28 +241,28 @@ def he_gti(full_exp_dir,out_dir='reduced_products',override=False):
         hv = check_and_choose(os.path.join(full_exp_dir,'HE'),\
             inc='HE-HV',ext='.FITS')
         if not hv:
-            print('High voltage file for HE missing')
+            logging.info('High voltage file for HE missing')
             return
 
         # Temperature file
         temp = check_and_choose(os.path.join(full_exp_dir,'HE'),\
             inc='HE-TH',ext='.FITS')
         if not temp:
-            print('Temperature file for HE is missing')
+            logging.info('Temperature file for HE is missing')
             return
 
         # ehk file
         ehk = check_and_choose(os.path.join(full_exp_dir,'AUX'),\
             inc='_EHK_',ext='.FITS')
         if not ehk:
-            print('Extend houskeeping data is missing')
+            logging.info('Extend houskeeping data is missing')
             return
 
         # pm file
         pm = check_and_choose(os.path.join(full_exp_dir,'HE'),\
             inc='HE-PM',ext='.FITS')
         if not pm:
-            print('Particle monitoring file is missing')
+            logging.info('Particle monitoring file is missing')
             return
         # -------------------------------------------------------------
 
@@ -275,7 +275,7 @@ def he_gti(full_exp_dir,out_dir='reduced_products',override=False):
 
         # Verifing successful running
         if not os.path.isfile(outfile):
-            print('he_gti output file was not created')
+            logging.info('he_gti output file was not created')
             return
 
     return outfile
@@ -333,19 +333,19 @@ def he_screen(full_exp_dir,cal_evt='',gti='',out_dir = 'reduced_products',
     if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
     tmp = full_exp_dir.split('/')
     if len(tmp) == 1:
-        print('he_screen requires full path for exp_dir')
+        logging.info('he_screen requires full path for exp_dir')
         return ''
     exp_dir = tmp[-1]
 
     # Checking exposure folder format
     if not check_exp_format(exp_dir):
-        print('Something is wrong in the exposure folder name, check:')
-        print(exp_dir)
+        logging.info('Something is wrong in the exposure folder name, check:')
+        logging.info(exp_dir)
         return
     exp_ID = exp_dir.split('-')[0]
 
     # Creating destination folder
-    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
+    destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
 
     # Initializing outfile
     outfile=os.path.join(destination,'HXMT_{}_HE_screen.fits'.format(exp_ID))
@@ -367,7 +367,7 @@ def he_screen(full_exp_dir,cal_evt='',gti='',out_dir = 'reduced_products',
 
         # Verifing successful running
         if not os.path.isfile(outfile):
-            print('he_screen output file was not created')
+            logging.info('he_screen output file was not created')
             return
 
     return outfile
@@ -415,19 +415,19 @@ def he_genspec(full_exp_dir,evt,out_dir='reduced_products',override=False):
     if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
     tmp = full_exp_dir.split('/')
     if len(tmp) == 1:
-        print('he_genspec requires full path for exp_dir')
+        logging.info('he_genspec requires full path for exp_dir')
         return ''
     exp_dir = tmp[-1]
     
     # Checking exposure folder format
     if not check_exp_format(exp_dir): 
-        print('Something is wrong in the exposure folder name, check:')
-        print(exp_dir)
+        logging.info('Something is wrong in the exposure folder name, check:')
+        logging.info(exp_dir)
         return 
     exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
-    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
+    destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
     
     # Initializing outfile
     outfile=os.path.join(destination,'HXMT_{}_HE_spec'.format(exp_ID))
@@ -450,7 +450,7 @@ def he_genspec(full_exp_dir,evt,out_dir='reduced_products',override=False):
         dead = check_and_choose(os.path.join(full_exp_dir,'HE'),
             inc='HE-DTime',ext='.FITS')
         if not dead:
-            print('Dead Time file for HE missing')
+            logging.info('Dead Time file for HE missing')
             return
     
         # Running hespecgen
@@ -464,14 +464,9 @@ def he_genspec(full_exp_dir,evt,out_dir='reduced_products',override=False):
         for outfile in outfiles:
             if not os.path.isfile(outfile):
                 logging.info('{} was not created'.format(outfile))
-                return False
+                return 
 
-        # Writing the energy spectra names into a text file 
-        # (this will be necessary for computing
-        # the background qwith hebkgmap)
-        with open(os.path.join(destination,'energy_spectra.txt'),'w') as txt:
-            for f in outfiles:
-                txt.write(f+'\n')
+        outfiles = sorted(outfiles)
     
     return outfiles
 
@@ -511,19 +506,19 @@ def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products',override=False):
     if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
     tmp = full_exp_dir.split('/')
     if len(tmp) == 1:
-        print('he_genrsp requires full path for exp_dir')
+        logging.info('he_genrsp requires full path for exp_dir')
         return ''
     exp_dir = tmp[-1]
     
     # Checking exposure folder format
     if not check_exp_format(exp_dir): 
-        print('Something is wrong in the exposure folder name, check:')
-        print(exp_dir)
+        logging.info('Something is wrong in the exposure folder name, check:')
+        logging.info(exp_dir)
         return 
     exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
-    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
+    destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
 
     outfiles = []
     for spectrum in spec_list:
@@ -540,25 +535,25 @@ def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products',override=False):
     
         # Initializing and checking existance of input files
         # Attitude file
-        att = check_and_choose(os.path.join(full_exp_dir,'ACS'),i
-            nc='Att',ext='.FITS')
+        att = check_and_choose(os.path.join(full_exp_dir,'ACS'),
+            inc='Att',ext='.FITS')
         if not att:
-            print('Attitude file for HE missing')
+            logging.info('Attitude file for HE missing')
             return    
 
         # Running herspgen
-        for outfile in outfiles:
+        for spectrum in spec_list:
+            outfile = spectrum.replace('spec','rsp')
             cmd = "herspgen phafile={} outfile={} attfile={} '\
-                  'ra=-1 dec=-91 clobber=yes".format(spec,outfile,att)
+                  'ra=-1 dec=-91 clobber=yes".format(spectrum,outfile,att)
             os.system(cmd)
             # Checking existance of the just created files
             if not os.path.isfile(outfile):
-                print('he_genrsp output file {} was not created'.format(i))
-                return        
+                logging.info('he_genrsp output file {} was not created'.\
+                    format(outfile))
+                return 
 
-        with open(os.path.join(destination,'energy_spectra_rsp.txt'),'w') as txt:
-            for f in outfiles:
-                txt.write(f+'\n')
+        outfiles=sorted(outfiles)       
         
     return outfiles  
 
@@ -610,19 +605,19 @@ def he_genle(full_exp_dir,evt,
     if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
     tmp = full_exp_dir.split('/')
     if len(tmp) == 1:
-        print('he_genle requires full path for exp_dir')
+        logging.info('he_genle requires full path for exp_dir')
         return ''
     exp_dir = tmp[-1]
     
     # Checking exposure folder format
     if not check_exp_format(exp_dir): 
-        print('Something is wrong in the exposure folder name, check:')
-        print(exp_dir)
+        logging.info('Something is wrong in the exposure folder name, check:')
+        logging.info(exp_dir)
         return 
     exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
-    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
+    destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
     
     # Initializing outfile
     outfile=os.path.join(destination,'HXMT_{}_HE_lc_ch{}-{}_{}s'.\
@@ -640,32 +635,25 @@ def he_genle(full_exp_dir,evt,
         # Initializing and checking existance of input files
         # Dead time file
         dead = check_and_choose(os.path.join(full_exp_dir,'HE'),
-        qinc='HE-DTime',ext='.FITS')
+            inc='HE-DTime',ext='.FITS')
         if not dead:
-            print('Dead Time file for HE missing')
+            logging.info('Dead Time file for HE missing')
             return
     
         # Running helcgen
         cmd = 'helcgen evtfile={} outfile={} deadfile={} \
         userdetid="{}" eventtype=1 minPI={} maxPI={} binsize={} clobber=yes'.\
-        format(evt,outfile,dead,det_ID,minpi,maxpi,binsize,destination)
+        format(evt,outfile,dead,det_ID,minpi,maxpi,binsize)
         os.system(cmd)
 
-        lc = glob.glob('{}/{}*.lc'.format(destination,outfile))
+        lcs = glob.glob('{}/{}*.lc'.format(destination,outfile))
     
         # Verifing successful running
-        if len(lc)==0:
-            print('he_genle output file was not created')
+        if len(lcs)==0:
+            logging.info('he_genle output file was not created')
             return
-
-        # Writing light curve name into a text file (this will be necessary 
-        # for computing the background qwith hebkgmap)
-        file_name = 'light_curve_ch{}-{}_{}s.txt'.\
-                         format(exp_ID,minpi,maxpi,binsize)
-        with open(os.path.join(destination,file_name),'w') as txt:
-            txt.write(lc[0]+'\n')
     
-    return lc[0]
+    return lcs[0]
 
 def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
     override=False):
@@ -712,19 +700,19 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
     if full_exp_dir[-1] == '/': full_exp_dir = full_exp_dir[0:-1]
     tmp = full_exp_dir.split('/')
     if len(tmp) == 1:
-        print('he_bkgmap requires full path for exp_dir')
+        logging.info('he_bkgmap requires full path for exp_dir')
         return ''
     exp_dir = tmp[-1]
     
     # Checking exposure folder format
     if not check_exp_format(exp_dir): 
-        print('Something is wrong in the exposure folder name, check:')
-        print(exp_dir)
+        logging.info('Something is wrong in the exposure folder name, check:')
+        logging.info(exp_dir)
         return 
     exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
-    destination = mf.create_dir(out_dir,os.path.join(full_exp_dir,'HE'))  
+    destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))  
 
     # Checking the format of the input file
     with open(os.path.join(destination,ascii_file),'r') as infile:
@@ -733,7 +721,7 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
 
     if '.lc' in lines[0]: 
         opt = 'lc'
-        lc_name = os.path.basename(lines[0])
+        lc_name = os.path.basename(lines[0]).strip()
         chunks = lc_name.split('_')
         ch_chunk = [c for c in chunks if 'ch' in c][0].replace('ch','')
         minPI = int(ch_chunk.split('-')[0])
@@ -748,6 +736,21 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
 
     # Here I should put some lines to check if files already exists
     compute = True
+    if opt == 'spec':
+        outfile=os.path.join(destination,'HXMT_{}_HE_spec_bkg'.format(exp_ID))
+        outfiles = []
+        for g in range(18):
+            outfiles += [outfile+'_{}.pha'.format(g)]
+        test = [os.path.isfile(f) for f in outfiles]
+        if sum(test) == 18:
+            logging.info('Energy spectra background already exist')
+            compute = False  
+    elif opt == 'lc':
+        outfile = lc_name.replace('_lc','_lc_bkg')
+        outfile = outfile.replace('.lc','')
+        if os.path.isfile(outfile+'.lc'):
+            logging.info('Lightcurve background already exists')
+            compute = False
 
     if compute or override:  
     
@@ -773,10 +776,9 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
                     os.path.join(destination,ascii_file),minPI,maxPI,outfile)
         os.system(cmd)
 
-        if opt='spec':
-            # Writing background files into a file (this will be needed by hhe_spec2pi)
-            with open(os.path.join(destination,'energy_spectra_bkg.txt'),'w') as txt:
-                for bkg in bkgs:
-                    txt.write(bkg+'\n')
+    if opt == 'lc':
+        return outfile
+    elif opt == 'spec':
+        return outfiles
 
-    return bkgs
+
