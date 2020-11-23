@@ -1,8 +1,9 @@
 import sys
 import os
 current_dir = os.getcwd()
-parent_dir = os.path.basename(current_dir)
-sys.path.append(os.path.join(parent_dir,functions))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(os.path.join(parent_dir,'functions'))
+print(parent_dir)
 
 from hxmt_funcs import *
 from my_funcs import *
@@ -31,10 +32,15 @@ script_name = args[0]
 # target = os.path.basename(df)
 parent_data_dir = '/media/QNAP_40T_HD/HXMTdata_version20200927'
 folders = next(os.walk(parent_data_dir))[1]
-for i,folder in enumerate(folders):
-    print('{}) {}'.format(i+1,folder))
-index = int(input('Choose a directory ====> '))-1
-target = folders[index]
+happy = False
+while not happy:
+    for i,folder in enumerate(folders):
+        print('{}) {}'.format(i+1,folder))
+    index = int(input('Choose a directory ====> '))-1
+    target = folders[index]
+    ans=input('You chose {}, are you happy?'.format(target))
+    if not ('N' in ans.upper() or 'O' in ans.upper()):
+        happy = True
 df = os.path.join(parent_data_dir,target)
 
 
@@ -45,7 +51,7 @@ rdf = create_dir(target,there)
 logs = create_dir('logs',rdf)
 
 
-# Initializing logget
+# Initializing logger
 
 now = datetime.datetime.now()
 date = ('%d_%d_%d') % (now.day,now.month,now.year)
@@ -83,7 +89,7 @@ if 'extract' in args:
         cmd = f'tar xvf {data} -C {rdf}'
         os.system(cmd)
 
-if 'ovverride' in args:
+if 'override' in args:
     override = True
 
 

@@ -152,7 +152,7 @@ def he_cal(full_exp_dir,out_dir = 'reduced_products',override=False):
         logging.info('Computing screened event file')
 
         # Initializing and checking existance of input files (event files) 
-        evt = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-Evt',ext='.FITS')
+        evt = check_and_choose(os.path.join(full_exp_dir,'HE'),inc='HE-Evt',ext='FITS')
         if not evt:
             logging.info('There is not event file for HE')
             return 
@@ -239,28 +239,28 @@ def he_gti(full_exp_dir,out_dir='reduced_products',override=False):
         # -------------------------------------------------------------
         # high voltage file
         hv = check_and_choose(os.path.join(full_exp_dir,'HE'),\
-            inc='HE-HV',ext='.FITS')
+            inc='HE-HV',ext='FITS')
         if not hv:
             logging.info('High voltage file for HE missing')
             return
 
         # Temperature file
         temp = check_and_choose(os.path.join(full_exp_dir,'HE'),\
-            inc='HE-TH',ext='.FITS')
+            inc='HE-TH',ext='FITS')
         if not temp:
             logging.info('Temperature file for HE is missing')
             return
 
         # ehk file
         ehk = check_and_choose(os.path.join(full_exp_dir,'AUX'),\
-            inc='_EHK_',ext='.FITS')
+            inc='_EHK_',ext='FITS')
         if not ehk:
             logging.info('Extend houskeeping data is missing')
             return
 
         # pm file
         pm = check_and_choose(os.path.join(full_exp_dir,'HE'),\
-            inc='HE-PM',ext='.FITS')
+            inc='HE-PM',ext='FITS')
         if not pm:
             logging.info('Particle monitoring file is missing')
             return
@@ -448,7 +448,7 @@ def he_genspec(full_exp_dir,evt,out_dir='reduced_products',override=False):
         # Initializing and checking existance of input files
         # Dead time file
         dead = check_and_choose(os.path.join(full_exp_dir,'HE'),
-            inc='HE-DTime',ext='.FITS')
+            inc='HE-DTime',ext='FITS')
         if not dead:
             logging.info('Dead Time file for HE missing')
             return
@@ -536,7 +536,7 @@ def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products',override=False):
         # Initializing and checking existance of input files
         # Attitude file
         att = check_and_choose(os.path.join(full_exp_dir,'ACS'),
-            inc='Att',ext='.FITS')
+            inc='Att',ext='FITS')
         if not att:
             logging.info('Attitude file for HE missing')
             return    
@@ -635,7 +635,7 @@ def he_genle(full_exp_dir,evt,
         # Initializing and checking existance of input files
         # Dead time file
         dead = check_and_choose(os.path.join(full_exp_dir,'HE'),
-            inc='HE-DTime',ext='.FITS')
+            inc='HE-DTime',ext='FITS')
         if not dead:
             logging.info('Dead Time file for HE missing')
             return
@@ -646,7 +646,7 @@ def he_genle(full_exp_dir,evt,
         format(evt,outfile,dead,det_ID,minpi,maxpi,binsize)
         os.system(cmd)
 
-        lcs = glob.glob('{}/{}*.lc'.format(destination,outfile))
+        lcs = glob.glob('{}*.lc'.format(outfile))
     
         # Verifing successful running
         if len(lcs)==0:
@@ -748,7 +748,8 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
     elif opt == 'lc':
         outfile = lc_name.replace('_lc','_lc_bkg')
         outfile = outfile.replace('.lc','')
-        if os.path.isfile(outfile+'.lc'):
+        lc_files = glob.glob('{}/*.lc'.format(destination))
+        if  outfile in lc_files:
             logging.info('Lightcurve background already exists')
             compute = False
 
@@ -758,22 +759,22 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
         # -------------------------------------------------------------
         # Dead time file
         dead = check_and_choose(os.path.join(full_exp_dir,'HE'),
-            inc='HE-DTime',ext='.FITS')
+            inc='HE-DTime',ext='FITS')
         if not dead:
             logging.info('Dead Time file for HE missing')
             return
 
         # ehk file
         ehk = check_and_choose(os.path.join(full_exp_dir,'AUX'),
-            inc='_EHK_',ext='.FITS')
+            inc='_EHK_',ext='FITS')
         if not ehk:
             logging.info('Extend houskeeping data is missing')
             return 
         # -------------------------------------------------------------
 
         # Running hebkgmap  
-        cmd = 'hebkgmap {} {} {} {} {} {} {} {} {}'.format(opt,evt,ehk,gti,dead,
-                    os.path.join(destination,ascii_file),minPI,maxPI,outfile)
+        cmd = 'hebkgmap {} {} {} {} {} {} {} {} {}'.format(opt,evt,ehk,gti,dead,\
+            os.path.join(destination,ascii_file),minPI,maxPI,os.path.join(destination,outfile))
         os.system(cmd)
 
     if opt == 'lc':
