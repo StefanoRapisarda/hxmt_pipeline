@@ -91,7 +91,8 @@ if 'extract' in args:
 
 if 'override' in args:
     override = True
-
+else:
+    override = False
 
 # Running the script
 
