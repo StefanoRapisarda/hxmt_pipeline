@@ -134,13 +134,14 @@ def he_cal(full_exp_dir,out_dir = 'reduced_products',override=False):
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return 
-    exp_ID = exp_dir.split('-')[0]
+    #exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
     
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
     
     # Initializing output file
-    outfile = os.path.join(destination,'HXMT_{}_HE_evt_cal.fits'.\
+    outfile = os.path.join(destination,'{}_HE_evt_cal.fits'.\
         format(exp_ID))
 
     compute = True
@@ -219,13 +220,14 @@ def he_gti(full_exp_dir,out_dir='reduced_products',override=False):
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return
-    exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
+    #exp_ID = exp_dir.split('-')[0]
 
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
 
     # Initializing outfile
-    outfile=os.path.join(destination,'HXMT_{}_HE_gti.fits'.format(exp_ID))
+    outfile=os.path.join(destination,'{}_HE_gti.fits'.format(exp_ID))
 
     compute = True
     if os.path.isfile(outfile):
@@ -342,13 +344,14 @@ def he_screen(full_exp_dir,cal_evt='',gti='',out_dir = 'reduced_products',
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return
-    exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
+    #exp_ID = exp_dir.split('-')[0]
 
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))
 
     # Initializing outfile
-    outfile=os.path.join(destination,'HXMT_{}_HE_screen.fits'.format(exp_ID))
+    outfile=os.path.join(destination,'{}_HE_screen.fits'.format(exp_ID))
 
     compute = True
     if os.path.isfile(outfile):
@@ -424,13 +427,14 @@ def he_genspec(full_exp_dir,evt,out_dir='reduced_products',override=False):
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return 
-    exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
+    #exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
     
     # Initializing outfile
-    outfile=os.path.join(destination,'HXMT_{}_HE_spec'.format(exp_ID))
+    outfile=os.path.join(destination,'{}_HE_spec'.format(exp_ID))
 
     outfiles = []
     for g in range(18):
@@ -515,7 +519,8 @@ def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products',override=False):
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return 
-    exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
+    #exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
@@ -614,13 +619,14 @@ def he_genle(full_exp_dir,evt,
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return 
-    exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
+    #exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE')) 
     
     # Initializing outfile
-    outfile=os.path.join(destination,'HXMT_{}_HE_lc_ch{}-{}_{}s'.\
+    outfile=os.path.join(destination,'{}_HE_lc_ch{}-{}_{}s'.\
                          format(exp_ID,minpi,maxpi,binsize))
 
     lc_list = glob.glob('{}/*.lc'.format(destination))
@@ -709,7 +715,8 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
         logging.info('Something is wrong in the exposure folder name, check:')
         logging.info(exp_dir)
         return 
-    exp_ID = exp_dir.split('-')[0]
+    exp_ID = exp_dir
+    #exp_ID = exp_dir.split('-')[0]
     
     # Creating destination folder
     destination = create_dir(out_dir,os.path.join(full_exp_dir,'HE'))  
@@ -737,7 +744,7 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
     # Here I should put some lines to check if files already exists
     compute = True
     if opt == 'spec':
-        outfile=os.path.join(destination,'HXMT_{}_HE_spec_bkg'.format(exp_ID))
+        outfile=os.path.join(destination,'{}_HE_spec_bkg'.format(exp_ID))
         outfiles = []
         for g in range(18):
             outfiles += [outfile+'_{}.pha'.format(g)]
