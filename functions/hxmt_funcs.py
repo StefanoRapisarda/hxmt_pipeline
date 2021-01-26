@@ -494,6 +494,15 @@ def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products',override=False):
     -------    
     outfiles: list
         List of the response files with their full path
+        
+    NOTES
+    -----
+    2021 01 26, Stefano Rapisarda (Uppsala)
+        According to 2019 documentation, the current version cannot 
+        produce response for the blind detector (DET 16).
+        As later on files from each detector are merged to produce 
+        the full spectrum, remember to remove spectrum and bkg of 
+        detector 16.
 
     HISTORY
     -------
@@ -744,7 +753,7 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
     # Here I should put some lines to check if files already exists
     compute = True
     if opt == 'spec':
-        outfile=os.path.join(destination,'{}_HE_spec_bkg'.format(exp_ID))
+        outfile=os.path.join(destination,'HE_spec_bkg'.format(exp_ID))
         outfiles = []
         for g in range(18):
             outfiles += [outfile+'_{}.pha'.format(g)]
