@@ -807,7 +807,7 @@ def he_bkgmap(full_exp_dir,ascii_file,evt,gti,out_dir = 'reduced_products',
     # Here I should put some lines to check if files already exists
     compute = True
     if opt == 'spec':
-        outfile=os.path.join(destination,'HE_spec_bkg'.format(exp_ID))
+        outfile=os.path.join(destination,'{}_HE_spec_bkg'.format(exp_ID))
         outfiles = []
         for g in range(18):
             outfiles += [outfile+'_{}.pha'.format(g)]
