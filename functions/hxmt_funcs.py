@@ -47,10 +47,10 @@ def check_HE_spectra_files(spectra,bkgs,resps,folder=os.getcwd()):
         logging.info('Number of files is not the same')
         return False
     
-    for line1,line2,line3 in zip(all_lines[0],all_lines[1],all_lines[2]):
-        if (line1.split('_')[-1] != line2.split('_')[-1]) or (line1.split('_')[-1] != line2.split('_')[-1]):
-            logging.info('Channels do not correspond')
-            return False
+    #for line1,line2,line3 in zip(all_lines[0],all_lines[1],all_lines[2]):
+    #    if (line1.split('_')[-1] != line2.split('_')[-1]) or (line1.split('_')[-1] != line2.split('_')[-1]):
+    #        logging.info('Channels do not correspond')
+    #        return False
         
         
     return True
