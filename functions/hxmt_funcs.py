@@ -6,6 +6,60 @@ import glob
 import numpy as np
 import logging
 
+def check_HE_spectra_files(spectra,bkgs,resps,folder=os.getcwd()):
+    '''
+    Checks if the .txt files spectra, bkgs, and resp exist,
+    have the same number of files, and these files correspond
+    to the same detectors
+    
+    PARAMETERS
+    ----------
+    spectra: string
+        Text file containing energy spectra per HE detector
+        
+    bkgs: string
+        Text file containing background spectra per HE detector
+        
+    resps: string
+        Text file containing response spectra per HE detector
+        
+    RETURNS
+    -------
+    flag: boolean
+        True if all the criteria are satisfied
+        
+    HISTORY
+    -------
+    2021 01 26, Stefano Rapisarda (Uppsala), creation date
+    '''
+    
+    all_lines = []
+    for f in [spectra,bkgs,resps]:
+        if not os.path.isfile(os.path.join(folder,f)):
+            logging.info('{} file does not exist in {}'.format(f,folder))
+            return False
+        else:
+            with open(os.path.join(folder,f),'r') as infile:
+                lines = infile.readlines()
+            all_lines += [lines]
+    
+    if (len(all_lines[0]) != len(all_lines[1])) or (len(all_lines[0]) != len(all_lines[2])):
+        logging.info('Number of files is not the same')
+        return False
+    
+    for line1,line2,line3 in zip(all_lines[0],all_lines[1],all_lines[2]):
+        if (line1.split('_')[-1] != line2.split('_')[-1]) or (line1.split('_')[-1] != line2.split('_')[-1]):
+            logging.info('Channels do not correspond')
+            return False
+        
+        
+    return True
+        
+        
+        
+    
+        
+
 def check_exp_format(exp):
     '''
     Check the right formar of the proposal format
