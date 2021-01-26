@@ -24,12 +24,17 @@ script_name = args[0]
 
 # Choosing data directory
 
+# This opens a dialogue window to choose the input folder, but it is
+# slow from remote
 #root = tkinter.Tk()
 #root.withdraw()
 # DF contains all the compressed data
 # df = filedialog.askdirectory(initialdir='/media/QNAP_40T_HD/HXMTdata_version20200927',
                              #title='Select one of the sources')
 # target = os.path.basename(df)
+
+# Choosing raw data folder
+# --------------------------------------------------------------------
 parent_data_dir = '/media/QNAP_40T_HD/HXMTdata_version20200927'
 folders = next(os.walk(parent_data_dir))[1]
 happy = False
@@ -42,26 +47,26 @@ while not happy:
     if not ('N' in ans.upper() or 'O' in ans.upper()):
         happy = True
 df = os.path.join(parent_data_dir,target)
-
+# --------------------------------------------------------------------
 
 # Destination and log folder
-
+# --------------------------------------------------------------------
 there = '/media/3HD/common_files'
-rdf = create_dir(target,there)
+rdf = create_dir(target,there) #raw data folder
 logs = create_dir('logs',rdf)
-
+# --------------------------------------------------------------------
 
 # Initializing logger
-
+# --------------------------------------------------------------------
 now = datetime.datetime.now()
 date = ('%d_%d_%d') % (now.day,now.month,now.year)
 time = ('%d_%d') % (now.hour,now.minute)
 logger_name = '{}/{}_D{}_T{}.log'.format(logs,script_name,date,time)
 initialize_logger(logger_name)
-
+# --------------------------------------------------------------------
 
 # Reading parameters from calling sequence
-
+# --------------------------------------------------------------------
 timeres = 1
 minch = 26
 maxch = 120
@@ -93,7 +98,9 @@ if 'override' in args:
     override = True
 else:
     override = False
-
+# --------------------------------------------------------------------
+    
+    
 # Running the script
 
 # At this point data should be organized in proposal-observation-exposure folders inside rdf
@@ -118,6 +125,7 @@ for proposal in proposals:
         exposures = sorted(next(os.walk(obs_folder))[1])
 
         # Checking ACS and AUX folders
+        # --------------------------------------------------------------------
         flag_acs = True
         if 'ACS' in exposures: 
             exposures.remove('ACS')
@@ -131,6 +139,7 @@ for proposal in proposals:
             logging.info('AUX folder does not exists. Skipping obs.')
             logging.info('-'*80+'\n')
             continue
+         # --------------------------------------------------------------------
 
         logging.info(f'There are {len(exposures)} exposures\n')
         for exposure in exposures:
@@ -139,6 +148,9 @@ for proposal in proposals:
             logging.info('*'*80)
             wf = os.path.join(obs_folder,exposure)
             #print(wf)
+            
+            # I define the obs ID as the exposure
+            obs_ID = exposure
             
             # Data reduction:
             # 1) Calibration
@@ -182,8 +194,11 @@ for proposal in proposals:
                     dir_name = os.path.dirname(spectra[0])
                     with open(os.path.join(dir_name,'energy_spectra.txt'),'w') as txt:
                         for spectrum in spectra:
+                          # Excluding blind detector spectrum
+                          if not spectrum.split('_')[-1].replace('.pha','') == '16':
                             txt.write(spectrum+'\n')
                 else:
+                    spectra = False
                     logging.info('4) Energy spectrum not computed')
 
             # 4b) Computing energy spectra response
@@ -194,6 +209,8 @@ for proposal in proposals:
                     logging.info('4b) Response file sucessfully computed')
                     with open(os.path.join(dir_name,'energy_spectra_rsp.txt'),'w') as txt:
                         for f in rsp:
+                          # Excluding blind detector spectrum
+                          if not f.split('_')[-1].replace('.pha','') == '16':
                             txt.write(f+'\n')
 
                     # Updating energy spectra RESPFILE keyword
@@ -217,6 +234,8 @@ for proposal in proposals:
                     # be needed by hhe_spec2pi)
                     with open(os.path.join(dir_name,'energy_spectra_bkg.txt'),'w') as txt:
                         for bkg in spec_bkg:
+                          # Excluding blind detector spectrum
+                          if not bkg.split('_')[-1].replace('.pha','') == '16':
                             txt.write(bkg+'\n')
 
                     # Updating energy spectra BACKFILE keyword
@@ -229,10 +248,16 @@ for proposal in proposals:
                 else:
                     logging.info('7) Energy spectrum background not computed')
 
-            # 4d) 
-            # TO DO
-            # Joining all the energy spectra from different detectors in a single file
-            cmd = 'hhe_spec2pi srcphafile= backfile= respfile='
+            # 4d) Joining all the energy spectra from different detectors in a single file
+            total_spec_flag = check_HE_spectra_files('energy_spectra.txt','energy_spectra_bkg.txt','energy_spectra_rsp.txt',dir_name)
+            if total_spec_flag:
+              cmd = 'hhe_spec2pi {} {} {} {} {} {}'.\
+                format(dir_name+'/energy_spectra.txt',dir_name+'/energy_spectra_bkg.txt',dir_name+'/energy_spectra_rsp.txt',
+                       dir_name+'/total_spectrum.pi',dir_name+'/total_spectrum_bkg.pi',dir_name+'/total_spectrum_rsp.pi')
+              os.system(cmd)
+              logging.info('Total energy spectrum successfully computed')
+            else:
+              logging.info('Could not compute total energy spectrum')  
                              
             # 5) Computing lightcurve
             lc = he_genle(wf,screen,binsize=timeres,minpi=minch,maxpi=maxch, override=override)
