@@ -41,7 +41,7 @@ def check_HE_spectra_files(spectra,bkgs,resps,folder=os.getcwd()):
         else:
             with open(os.path.join(folder,f),'r') as infile:
                 lines = infile.readlines()
-            all_lines += [lines]
+            all_lines += [sorted(lines)]
     
     if (len(all_lines[0]) != len(all_lines[1])) or (len(all_lines[0]) != len(all_lines[2])):
         logging.info('Number of files is not the same')
@@ -611,6 +611,8 @@ def he_genrsp(full_exp_dir,spec_list,out_dir='reduced_products',override=False):
 
         # Running herspgen
         for spectrum in spec_list:
+            # Excluding detector 16
+            if spectrum.split('_')[-1].replace('.pha','') == '16': continue
             outfile = spectrum.replace('spec','rsp')
             cmd = "herspgen phafile={} outfile={} attfile={} '\
                   'ra=-1 dec=-91 clobber=yes".format(spectrum,outfile,att)
