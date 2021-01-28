@@ -262,7 +262,7 @@ for proposal in proposals:
                 total_spec_flag = check_HE_spectra_files('energy_spectra.txt','energy_spectra_bkg.txt','energy_spectra_rsp.txt',dir_name)
                 if total_spec_flag:
                   spectral_names = ['total_spectrum','total_spectrum_bkg','total_spectrum_rsp']
-                  outputs = [dir_name+'/'+sp+'_CH{}_{}.pi'.format(minch,maxch) for sp in spectral_names]
+                  outputs = [dir_name+'/'+sp+'_ch{}_{}.pi'.format(minch,maxch) for sp in spectral_names]
                   #outputs = [dir_name+'/total_spectrum.pi',
                   #           dir_name+'/total_spectrum_bkg.pi',dir_name+'/total_spectrum_rsp.pi']
                   cmd = 'hhe_spec2pi {} {} {} {} {} {}'.\
