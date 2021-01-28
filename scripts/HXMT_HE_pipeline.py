@@ -98,6 +98,12 @@ if 'override' in args:
     override = True
 else:
     override = False
+   
+comp_lc = True
+comp_spec = True
+if 'onlyspec' in args: comp_lc = False
+if 'onlylc' in args: comp_spec = False
+   
 # --------------------------------------------------------------------
     
     
@@ -181,108 +187,123 @@ for proposal in proposals:
                 continue                             
 
             # 4) Computing energy spectrum
-            if flag_acs:
-  
-                # 4a) Energy spectrum
-                spectra = he_genspec(wf,screen, override=override)
-                if spectra:
-                    logging.info('4) Energy spectrum successfully computed')
+            if comp_spec and flag_acs:
 
-                    # Writing the energy spectra names into a text file 
-                    # (this will be necessary for computing
-                    # the background qwith hebkgmap)
-                    dir_name = os.path.dirname(spectra[0])
-                    with open(os.path.join(dir_name,'energy_spectra.txt'),'w') as txt:
-                        for spectrum in spectra:
-                          # Excluding blind detector spectrum
-                          if not spectrum.split('_')[-1].replace('.pha','') == '16':
-                            txt.write(spectrum+'\n')
-                else:
-                    spectra = False
-                    logging.info('4) Energy spectrum not computed')
+              # 4a) Energy spectrum
+              spectra = he_genspec(wf,screen, override=override)
+              if spectra:
+                  logging.info('4) Energy spectrum successfully computed')
 
-            # 4b) Computing energy spectra response
-            if spectra:
+                  # Writing the energy spectra names into a text file 
+                  # (this will be necessary for computing
+                  # the background qwith hebkgmap)
+                  dir_name = os.path.dirname(spectra[0])
+                  with open(os.path.join(dir_name,'energy_spectra.txt'),'w') as txt:
+                      for spectrum in spectra:
+                        # Excluding blind detector spectrum
+                        if not spectrum.split('_')[-1].replace('.pha','') == '16':
+                          txt.write(spectrum+'\n')
+                  with open(os.path.join(dir_name,'energy_spectra_for_bkg.txt'),'w') as txt:
+                      for spectrum in spectra:
+                          txt.write(spectrum+'\n')
+              else:
+                  spectra = False
+                  logging.info('4) Energy spectrum not computed')
+
+              # 4b) Computing energy spectra response
+              if spectra:
+
+                  rsp = he_genrsp(wf,spectra, override=override)
+                  if rsp:
+                      logging.info('4b) Response file sucessfully computed')
+                      with open(os.path.join(dir_name,'energy_spectra_rsp.txt'),'w') as txt:
+                          for f in rsp:
+                            # Excluding blind detector spectrum
+                            if not f.split('_')[-1].replace('.pha','') == '16':
+                              txt.write(f+'\n')
+
+                      # Updating energy spectra RESPFILE keyword
+                      for i in range(len(spectra)):
+                          logging.info('Updating {} response keyword with {}'.\
+                              format(spectra[i],rsp[i]))
+                          with fits.open(spectra[i]) as hdu_list:
+                              header = hdu_list[0].header
+                              header['RESPFILE']=rsp[i]
+                  else:
+                      logging.info('4b) Response file not computed')
+
+              # 4c) Computing energy spectra background
+              if spectra and rsp:
+
+                  spec_bkg = he_bkgmap(wf,'energy_spectra_for_bkg.txt',screen,gti, override=override)
+                  if spec_bkg:
+                      logging.info('7) Energy spectrum background successfully computed')
+
+                      # Writing background files into a file (this will 
+                      # be needed by hhe_spec2pi)
+                      with open(os.path.join(dir_name,'energy_spectra_bkg.txt'),'w') as txt:
+                          for bkg in spec_bkg:
+                            # Excluding blind detector spectrum
+                            if not bkg.split('_')[-1].replace('.pha','') == '16':
+                              txt.write(bkg+'\n')
+
+                      # Updating energy spectra BACKFILE keyword
+                      for i in range(len(spectra)):
+                          logging.info('Updating {} background keyword with {}'.\
+                              format(spectra[i],spec_bkg[i]))
+                          with fits.open(spectra[i]) as hdu_list:
+                              header = hdu_list[0].header
+                              header['BACKFILE']=spec_bkg[i]
+                  else:
+                      logging.info('7) Energy spectrum background not computed')
+
+              # 4d) Joining all the energy spectra from different detectors in a single file
+              if spectra and rsp and spec_bkg:
+                total_spec_flag = check_HE_spectra_files('energy_spectra.txt','energy_spectra_bkg.txt','energy_spectra_rsp.txt',dir_name)
+                if total_spec_flag:
+                  outputs = [dir_name+'/total_spectrum.pi',dir_name+'/total_spectrum_bkg.pi',dir_name+'/total_spectrum_rsp.pi']
+                  cmd = 'hhe_spec2pi {} {} {} {} {} {}'.\
+                    format(dir_name+'/energy_spectra.txt',dir_name+'/energy_spectra_bkg.txt',dir_name+'/energy_spectra_rsp.txt',
+                          outputs[0],outputs[1],outputs[2])
+                  os.system(cmd)
+
+                  success = True
+                  for output in outputs:
+                    if not os.path.isfile(output): success = False
+                  if success: 
+                    logging.info('Total energy spectrum successfully computed')
+                  else:
+                    logging.info('Could not compute total energy spectrum')  
                 
-                rsp = he_genrsp(wf,spectra, override=override)
-                if rsp:
-                    logging.info('4b) Response file sucessfully computed')
-                    with open(os.path.join(dir_name,'energy_spectra_rsp.txt'),'w') as txt:
-                        for f in rsp:
-                          # Excluding blind detector spectrum
-                          if not f.split('_')[-1].replace('.pha','') == '16':
-                            txt.write(f+'\n')
-
-                    # Updating energy spectra RESPFILE keyword
-                    for i in range(len(spectra)):
-                        logging.info('Updating {} response keyword with {}'.\
-                            format(spectra[i],rsp[i]))
-                        with fits.open(spectra[i]) as hdu_list:
-                            header = hdu_list[0].header
-                            header['RESPFILE']=rsp[i]
                 else:
-                    logging.info('4b) Response file not computed')
-
-            # 4c) Computing energy spectra background
-            if spectra and rsp:
-
-                spec_bkg = he_bkgmap(wf,'energy_spectra.txt',screen,gti, override=override)
-                if spec_bkg:
-                    logging.info('7) Energy spectrum background successfully computed')
-                
-                    # Writing background files into a file (this will 
-                    # be needed by hhe_spec2pi)
-                    with open(os.path.join(dir_name,'energy_spectra_bkg.txt'),'w') as txt:
-                        for bkg in spec_bkg:
-                          # Excluding blind detector spectrum
-                          if not bkg.split('_')[-1].replace('.pha','') == '16':
-                            txt.write(bkg+'\n')
-
-                    # Updating energy spectra BACKFILE keyword
-                    for i in range(len(spectra)):
-                        logging.info('Updating {} background keyword with {}'.\
-                            format(spectra[i],spec_bkg[i]))
-                        with fits.open(spectra[i]) as hdu_list:
-                            header = hdu_list[0].header
-                            header['BACKFILE']=spec_bkg[i]
-                else:
-                    logging.info('7) Energy spectrum background not computed')
-
-            # 4d) Joining all the energy spectra from different detectors in a single file
-            total_spec_flag = check_HE_spectra_files('energy_spectra.txt','energy_spectra_bkg.txt','energy_spectra_rsp.txt',dir_name)
-            if total_spec_flag:
-              cmd = 'hhe_spec2pi {} {} {} {} {} {}'.\
-                format(dir_name+'/energy_spectra.txt',dir_name+'/energy_spectra_bkg.txt',dir_name+'/energy_spectra_rsp.txt',
-                       dir_name+'/total_spectrum.pi',dir_name+'/total_spectrum_bkg.pi',dir_name+'/total_spectrum_rsp.pi')
-              os.system(cmd)
-              logging.info('Total energy spectrum successfully computed')
-            else:
-              logging.info('Could not compute total energy spectrum')  
+                  logging.info('Something went wrong with hhe_spec2pi input files. Could not compute total energy spectrum')
                              
-            # 5) Computing lightcurve
-            lc = he_genle(wf,screen,binsize=timeres,minpi=minch,maxpi=maxch, override=override)
-            if lc:
-                logging.info('5) Lightcurve successfully computed')
 
-                # Writing light curve name into a text file (this will be necessary 
-                # for computing the background with hebkgmap)
-                dir_name = os.path.dirname(lc)
-                file_name = 'light_curve_ch{}-{}_{}s.txt'.\
-                                format(minch,maxch,timeres)
-                with open(os.path.join(dir_name,file_name),'w') as txt:
-                    txt.write(lc+'\n')
-            else:
-                logging.info('5) Lightcurve not computed. Skipping obs')
-                logging.info('-'*80+'\n')
-                continue   
-           
-            # 5b) Computing lightcurve background
-            if lc:
-                lc_bkg = he_bkgmap(wf,file_name,screen,gti, override=override)
-                if lc_bkg:
-                    logging.info('8) Lightcurve background successfully computed')
-                else:
-                    logging.info('8) Lightcurve background not computed')
+            if comp_lc:
+               # 5) Computing lightcurve
+              lc = he_genle(wf,screen,binsize=timeres,minpi=minch,maxpi=maxch, override=override)
+              if lc:
+                  logging.info('5) Lightcurve successfully computed')
+
+                  # Writing light curve name into a text file (this will be necessary 
+                  # for computing the background with hebkgmap)
+                  dir_name = os.path.dirname(lc)
+                  file_name = 'light_curve_ch{}-{}_{}s.txt'.\
+                                  format(minch,maxch,timeres)
+                  with open(os.path.join(dir_name,file_name),'w') as txt:
+                      txt.write(lc+'\n')
+              else:
+                  logging.info('5) Lightcurve not computed. Skipping obs')
+                  logging.info('-'*80+'\n')
+                  continue   
+
+              # 5b) Computing lightcurve background
+              if lc:
+                  lc_bkg = he_bkgmap(wf,file_name,screen,gti, override=override)
+                  if lc_bkg:
+                      logging.info('8) Lightcurve background successfully computed')
+                  else:
+                      logging.info('8) Lightcurve background not computed')
 
             logging.info('*'*80+'\n')
         logging.info('-'*80+'\n')
