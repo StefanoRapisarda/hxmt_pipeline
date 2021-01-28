@@ -21,7 +21,7 @@ df = os.path.join(parent_data_dir,target)
 there = '/media/3HD/common_files'
 rdf = os.path.join(there,target)
 
-limbo = '/media/3HD/stefano/climbo/Cyg_X1_lcs'
+limbo = '/media/3HD/stefano/climbo/Cygnus_X1'
 
 # At this point data should be organized in proposal-observation-exposure folders inside rdf
 proposals = sorted(next(os.walk(rdf))[1])
@@ -63,10 +63,28 @@ for proposal in proposals:
             logging.info('*'*80)
             wf = os.path.join(obs_folder,exposure)
 
+            # Targeting destination folder
+            target = os.path.join(wf,'HE/reduced_products')
+            
             # Creating destination folder
-            destination = os.path.join(wf,'HE/reduced_products')
+            destination = os.path.join(limbo,exposure)
+            os.system('mkdir {}'.format(destination))
 
-            lc_files = glob.glob('{}/*.lc'.format(destination))
+            # Compying and zipping lc files
+            lc_files = glob.glob('{}/*.lc'.format(target))
             for lc in lc_files:
-                cmd = 'cp {} {}'.format(lc,limbo)
+                # Transfering lightcurves
+                cmd = 'cp {} {}'.format(lc,destination)
                 os.system(cmd)
+                
+                # Zipping the file
+                cmd = 'gzip {}'.format(os.path.join(destination,lc))
+                os.system(cmd)
+                
+            # Compying .pi files
+            pi_files = glob.glob('{}/*.pi'.format(target))
+            for pi in pi_files:
+                cmd = 'cp {} {}'.format(pi,destination)
+                os.system(cmd)
+                
+                
