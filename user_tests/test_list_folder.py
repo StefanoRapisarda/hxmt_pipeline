@@ -1,41 +1,5 @@
-import os
-import sys
-import sysconfig
-import logging
 import pathlib
 import re
-
-def create_dir(dir_name,path=os.getcwd()):
-    '''
-    Stefano Rapisarda, 09/05/2019, SHAO
-
-    This routine checks if the folder dir_name exists.
-    If so, it returns the same path, otherwise it creates the folder and
-    return the full path.
-
-    PARAMETERS
-    ----------
-    dir_name: string
-              Name of the directory to create
-    path: string, optional
-              Path of the directory to create
-
-    RETURN
-    ------
-    new_folder: string
-              Full path of the newly created folder
-    '''
-
-    if not path:
-        new_folder = os.path.join(dir_name)
-    else:
-        new_folder = os.path.join(path,dir_name)
-    if os.path.isdir(new_folder):
-        print('{} already exists.'.format(new_folder))
-    else:
-        print('{} does not exist, creating it'.format(dir_name))
-        os.mkdir(new_folder)
-    return new_folder
 
 def list_items(path,itype = 'dir',ext = '',
                 include_or=[],include_and=[],exclude_or=[],exclude_and=[],
@@ -103,8 +67,6 @@ def list_items(path,itype = 'dir',ext = '',
 
     if type(path) != type(pathlib.Path()):
         path = pathlib.Path(path)
-
-    if ext != '': itype='file'
 
     # Listing items
     items = []
@@ -221,54 +183,13 @@ def list_items(path,itype = 'dir',ext = '',
             target = items
             happy = True
 
-    if type(target) == list:
-        if sort: target = sorted(target)
-        if len(target) == 1: 
-            target = target[0]
-        elif len(target) == 0:
-            target = False
+    if sort and type(target) == list:
+        target = sorted(target)
 
     return target
 
-def initialize_logger(log_name=False,level=logging.DEBUG):
-    '''
-    Initialize logging options to pring log messages on the screen
-    and on a file (if log_name is specified)
+if __name__ == '__main__':
+    result = list_items(path='/Volumes/Samsung_T5',choose=True)
+    print(result)
 
-    HISTORY
-    -------
-    unknown   , Stefano Rapisarda (SHAO), creation date
-    2020 09 23, Stefano Rapisarda (Uppsala), efficiency improved
-    '''
-
-    # Creating an instance of the object logger
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    # Setting a format for the log
-    formatter = logging.Formatter('%(levelname)s: %(asctime)s: %(message)s')
-
-    if log_name:
-        logging.basicConfig(level=level,
-                            format='%(levelname)s: %(asctime)s: %(message)s',
-                            datefmt='%Y-%m-%d %H:%M:%S',
-                            filename=log_name+'.log',
-                            filemode='w')
-
-    # Creating the log handler
-    #handler = logging.StreamHandler(stream=sys.stderr)
-    handler = logging.StreamHandler(stream=sys.stderr)
-    handler.setLevel(logging.DEBUG)
-    handler.setFormatter(formatter) 
-
-    # Configuring the logger with the handler
-    logger.addHandler(handler)   
-
-    #if log_name:
-        
-    #    handler = logging.FileHandler(log_name,"w", encoding=None, delay="true")
-    #    handler.setLevel(logging.DEBUG)
-    #    handler.setFormatter(formatter)
-    #    logger.addHandler(handler)
-
-    return logger
+    
