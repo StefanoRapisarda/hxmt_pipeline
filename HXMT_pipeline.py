@@ -76,9 +76,9 @@ make_logger(log_name,outdir=rdf)
 
 # Reading parameters from calling sequence
 # --------------------------------------------------------------------
-timeres = 1
-if 'timeres' in arg_dict.keys():
-    timeres = eval(arg_dict['timeres'])
+hetimeres = 1
+if 'hetimeres' in arg_dict.keys():
+    hetimeres = eval(arg_dict['hetimeres'])
 
 heminch = 8
 hemaxch = 162
@@ -87,12 +87,20 @@ if 'heminch' in arg_dict.keys():
 if 'hemaxch' in arg_dict.keys():
     hemaxch = float(arg_dict['hemaxch'])
 
+metimeres = 1
+if 'metimeres' in arg_dict.keys():
+    metimeres = eval(arg_dict['metimeres'])
+
 meminch = 119
 memaxch = 546
 if 'meminch' in arg_dict.keys():
     meminch = float(arg_dict['meminch'])
 if 'memaxch' in arg_dict.keys():
     memaxch = float(arg_dict['memaxch'])
+
+letimeres = 1
+if 'letimeres' in arg_dict.keys():
+    letimeres = eval(arg_dict['letimeres'])
 
 leminch = 106
 lemaxch = 1169
@@ -237,7 +245,7 @@ for i,proposal in enumerate(proposals):
 
                 # 4) Computing lightcurve
                 if comp_lc:
-                    helc = he_lc(wf,binsize=timeres,minpi=heminch,maxpi=hemaxch, 
+                    helc = he_lc(wf,binsize=hetimeres,minpi=heminch,maxpi=hemaxch, 
                         override=override, out_dir=rdf)
                     if helc:
                         logging.info('4) Lightcurve successfully computed')
@@ -311,7 +319,7 @@ for i,proposal in enumerate(proposals):
                     continue
 
                 # 2) Grading events
-                megrade,medead = me_grade(wf, binsize=timeres, 
+                megrade,medead = me_grade(wf, binsize=metimeres, 
                     override=override, out_dir=rdf)
                 if megrade and medead:
                     logging.info('2) ME grading successfully perfomed')
@@ -320,7 +328,7 @@ for i,proposal in enumerate(proposals):
                     logging.info('-'*80+'\n')
                     continue
 
-                if timeres != 1:
+                if metimeres != 1:
                 # 2b) Creating deadtime for energy spectrum
                     megrade1,medead1 = me_grade(wf, override=override, out_dir=rdf)
                     if megrade and medead:
@@ -359,7 +367,7 @@ for i,proposal in enumerate(proposals):
 
                 # 6) Computing lightcurve
                 if comp_lc:
-                    melc = me_lc(wf,binsize=timeres,minpi=meminch,maxpi=memaxch, 
+                    melc = me_lc(wf,binsize=metimeres,minpi=meminch,maxpi=memaxch, 
                         override=override, out_dir=rdf)
                     if melc:
                         logging.info('6) Lightcurve successfully computed')
@@ -468,7 +476,7 @@ for i,proposal in enumerate(proposals):
 
                 # 6) Computing lightcurve
                 if comp_lc:
-                    lelc = le_lc(wf,binsize=timeres,minpi=meminch,maxpi=memaxch, 
+                    lelc = le_lc(wf,binsize=letimeres,minpi=meminch,maxpi=memaxch, 
                         override=override, out_dir=rdf)
                     if lelc:
                         logging.info('6) Lightcurve successfully computed')
