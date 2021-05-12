@@ -127,7 +127,7 @@ def list_items(path,itype = 'dir',ext = '',
             #file_name = str(item.name)
             #target_index = file_name.find('.')
             ext_to_test = item.suffix
-            if ext_to_test in ext:
+            if ext_to_test[1:] in ext:
                 new_items += [item]
         items = new_items
 
