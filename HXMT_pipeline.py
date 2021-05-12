@@ -253,8 +253,6 @@ for i,proposal in enumerate(proposals):
                         logging.info('4) Lightcurve successfully computed')
                     else:
                         logging.info('4) Lightcurve not computed. Skipping obs')
-                        logging.info('-'*80+'\n')
-                        continue   
 
                     # 4b) Computing lightcurve background
                     if helc:
@@ -375,8 +373,6 @@ for i,proposal in enumerate(proposals):
                         logging.info('6) Lightcurve successfully computed')
                     else:
                         logging.info('6) Lightcurve not computed. Skipping obs')
-                        logging.info('-'*80+'\n')
-                        continue   
 
                     # 6b) Computing lightcurve background
                     if melc:
@@ -392,7 +388,6 @@ for i,proposal in enumerate(proposals):
                     mespectrum = me_spec(wf, binsize=1, override=override, out_dir=rdf)
                     if mespectrum:
                         logging.info('7) Energy spectrum successfully computed')
-
                     else:
                         logging.info('7) Energy spectrum not computed')
 
@@ -484,8 +479,6 @@ for i,proposal in enumerate(proposals):
                         logging.info('6) Lightcurve successfully computed')
                     else:
                         logging.info('6) Lightcurve not computed. Skipping obs')
-                        logging.info('-'*80+'\n')
-                        continue   
 
                     # 6b) Computing lightcurve background
                     if lelc:
