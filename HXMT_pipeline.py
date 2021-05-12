@@ -127,12 +127,14 @@ logging.info('Settings')
 logging.info('-'*72)
 logging.info('Data directory: {}'.format(df))
 logging.info('Destination directory: {}'.format(rdf))
-logging.info('Time resolution [s]: {}'.format(timeres))
 if 'HE' in arg_dict.keys():
+    logging.info('HE Time resolution [s]: {}'.format(hetimeres))
     logging.info('HE energy channels {}-{}'.format(heminch,hemaxch))
 if 'ME' in arg_dict.keys():    
+    logging.info('ME Time resolution [s]: {}'.format(metimeres))
     logging.info('ME energy channels {}-{}'.format(meminch,memaxch))
-if 'LE' in arg_dict.keys():    
+if 'LE' in arg_dict.keys():  
+    logging.info('LE Time resolution [s]: {}'.format(letimeres))  
     logging.info('LE energy channels {}-{}'.format(leminch,lemaxch))
 logging.info('-'*72+'\n')
 # --------------------------------------------------------------------
