@@ -2063,6 +2063,21 @@ def me_bkg(full_exp_dir,ascii_file,screen_evt_file=None,
     if not dead_time_file.is_file():
         logging.error('{} does not exist'.format(dead_time_file))
         return False
+
+    if gti_file is None:
+        gti_file = list_items(destination,itype='file',
+            include_or=['ME_gti'],exclude_or=['pre','png'])
+        if gti_file:
+            if type(gti_file) == list: 
+                logging.error('There is more than one second ME gti file')
+                return False
+        else:
+            logging.error('I could not find a second ME gti file')
+            return False
+    if type(gti_file) == str: gti_file = pathlib.Path(gti_file)
+    if not gti_file.is_file():
+        logging.error('{} does not exist'.format(gti_file))
+        return False 
     # -----------------------------------------------------------------
   
     # Automatically recognize channels and file type
