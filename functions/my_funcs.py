@@ -126,6 +126,7 @@ def list_items(path,itype = 'dir',ext = '',
             # Finding the first occurrence of a dot
             #file_name = str(item.name)
             #target_index = file_name.find('.')
+            # .suffix returns the extension with the point
             ext_to_test = item.suffix
             if ext_to_test[1:] in ext:
                 new_items += [item]

@@ -36,6 +36,10 @@ def check_exp_format(exp):
         return False     
     return True
 
+# =====================================================================
+# ===================== HE functions ==================================
+# =====================================================================
+
 def he_cal(full_exp_dir,out_dir=pathlib.Path.cwd(),override=False):
     '''
     Runs HXMT tool hepical creating a calibrated event file
@@ -276,7 +280,6 @@ def he_gti(full_exp_dir,out_dir=pathlib.Path.cwd(),override=False):
 
     return outfile
 
-
 def he_screen(full_exp_dir,cal_evt_file=None,gti_file=None,
         out_dir = pathlib.Path.cwd(),minpi=0,maxpi=255,override=False):
     '''
@@ -506,6 +509,7 @@ def he_spec(full_exp_dir,screen_evt_file=None,out_dir=pathlib.Path.cwd(),
     compute = True
     if spec_test:
         logging.info('Energy spectrum already exist')
+        spec_file = spec_test
         compute = False  
 
     if compute or override:
@@ -544,7 +548,7 @@ def he_spec(full_exp_dir,screen_evt_file=None,out_dir=pathlib.Path.cwd(),
         with open(pathlib.Path(spec_file).with_suffix('.txt'),'w') as tmp:
             tmp.write(str(spec_file)+'\n')
 
-    return pathlib.Path(spec_file)
+    return spec_file
 
 def he_rsp(full_exp_dir,energy_spectrum_file,out_dir=pathlib.Path.cwd(),override=False):
     '''
@@ -753,6 +757,7 @@ def he_lc(full_exp_dir,screen_evt_file=None,
     compute = True
     if lc_test:
         logging.info('Lightcurve already exists')
+        lc_file = lc_test
         compute = False  
 
     if compute or override:
@@ -779,7 +784,7 @@ def he_lc(full_exp_dir,screen_evt_file=None,
             binsize={binsize} clobber=yes'
         os.system(cmd)
 
-        lc_file = list_items(destination,itype='file',include_or=[file_name_root],
+        lc_file = list_items(destination,itype='file',include_or=file_name_root,
             exclude_or='bkg',ext='lc')
     
         # Verifing successful running
@@ -791,7 +796,7 @@ def he_lc(full_exp_dir,screen_evt_file=None,
         with open(pathlib.Path(lc_file).with_suffix('.txt'),'w') as tmp:
             tmp.write(str(lc_file)+'\n')
     
-    return pathlib.Path(lc_file)
+    return lc_file
 
 def he_bkg(full_exp_dir,ascii_file,screen_evt_file=None,gti_file=None,
     out_dir=pathlib.Path.cwd(),override=False):
@@ -910,7 +915,7 @@ def he_bkg(full_exp_dir,ascii_file,screen_evt_file=None,gti_file=None,
     
     # Automatically recognize channels and file type
     # -----------------------------------------------------------------
-    file_name = pathlib.Path(lines[0]).stem
+    file_name = pathlib.Path(lines[0].strip()).stem
     ext = pathlib.Path(lines[0].strip()).suffix
     chunks = file_name.split('_')
     ch_chunk = [c for c in chunks if 'ch' in c][0].replace('ch','')
@@ -926,16 +931,16 @@ def he_bkg(full_exp_dir,ascii_file,screen_evt_file=None,gti_file=None,
         logging.info('File in the input list has not any recognizable format')
         return 
     output_root = destination/(file_name+'_bkg')
-    output = destination/(file_name+'_bkg'+ext)
+    output = list_items(destination,itype='file',include_and=[file_name,'_bkg'],ext=ext)
     # -----------------------------------------------------------------
 
     compute = True
-    if output.is_file():
+    if output:
         logging.info('Background file already exists')
         compute = False  
 
-        if compute or override:
-            logging.info('Computing HE {} background'.format(opt))
+    if compute or override:
+        logging.info('Computing HE {} background'.format(opt))
             
         # Initializing and checking existance of input files
         # -------------------------------------------------------------
@@ -957,12 +962,17 @@ def he_bkg(full_exp_dir,ascii_file,screen_evt_file=None,gti_file=None,
             {ascii_file} {minpi} {maxpi} {output_root}'
         os.system(cmd)
 
-        if not output.is_file():
+        output = list_items(destination,itype='file',include_and=[file_name,'_bkg'],ext=ext)
+
+        if not output:
             logging.warning('he_bkg output file was not created')
             return
 
     return output
 
+# =====================================================================
+# ===================== ME functions ==================================
+# =====================================================================
 
 def me_cal(full_exp_dir,out_dir=pathlib.Path.cwd(),override=False):
     '''
@@ -1068,7 +1078,6 @@ def me_cal(full_exp_dir,out_dir=pathlib.Path.cwd(),override=False):
             return         
     
     return outfile   
-
 
 def me_grade(full_exp_dir,cal_evt_file=None,out_dir=pathlib.Path.cwd(),
     binsize=1,override=False):
@@ -1549,7 +1558,6 @@ def me_screen(full_exp_dir,grade_evt_file=None,gti_file=None,bad_det_file=None,
 
     return outfile
 
-
 def me_spec(full_exp_dir,screen_evt_file=None,dead_time_file=None,
     user_det_ids='0-7,11-25,29-43,47-53',binsize=1,
     minpi=0,maxpi=1023,out_dir=pathlib.Path.cwd(),override=False):
@@ -1662,6 +1670,7 @@ def me_spec(full_exp_dir,screen_evt_file=None,dead_time_file=None,
     compute = True
     if test_spec:
         logging.info('ME energy spectrum already exist')
+        output = test_spec
         compute = False  
 
     if compute or override:
@@ -1800,6 +1809,7 @@ def me_lc(full_exp_dir,screen_evt_file=None,dead_time_file=None,
     compute = True
     if lc_test:
         logging.info('ME lightcurve already exists')
+        output = lc_test
         compute = False  
 
     if compute or override:
@@ -1826,7 +1836,7 @@ def me_lc(full_exp_dir,screen_evt_file=None,dead_time_file=None,
         with open(pathlib.Path(output).with_suffix('.txt'),'w') as tmp:
             tmp.write(str(output)+'\n')
     
-    return pathlib.Path(output)
+    return output
 
 def me_rsp(full_exp_dir,energy_spectrum_file,
         out_dir=pathlib.Path.cwd(),override=False):
@@ -2063,6 +2073,7 @@ def me_bkg(full_exp_dir,ascii_file,screen_evt_file=None,
     ch_chunk = [c for c in chunks if 'ch' in c][0].replace('ch','')
     minpi = int(ch_chunk.split('-')[0])
     maxpi = int(ch_chunk.split('-')[1]) 
+    print(minpi,maxpi)
     if ext == '.lc': 
         logging.info('Computing ME lightcurve background')
         opt = 'lc'
@@ -2073,12 +2084,13 @@ def me_bkg(full_exp_dir,ascii_file,screen_evt_file=None,
         logging.info('File in the input list has not any recognizable format')
         return 
     output_root = destination/(file_name+'_bkg')
-    outfile = destination/(file_name+'_bkg'+ext)
+    output = list_items(destination,itype='file',include_and=[file_name,'_bkg'],ext=ext)
+    print(file_name)
     # -----------------------------------------------------------------
 
     compute = True
-    if not outfile.is_file():
-        logging.info('{} already exists.'.format(outfile))
+    if output:
+        logging.info('{} already exists.'.format(output))
       
     if compute or override:
         # Initializing and checking existance of input files
@@ -2103,14 +2115,20 @@ def me_bkg(full_exp_dir,ascii_file,screen_evt_file=None,
         # Running mebkgmap  
         cmd = f'mebkgmap {opt} {screen_evt_file} {ehk} {gti_file} \
             {dead_time_file} {temp} {ascii_file} {minpi} {maxpi} \
-            {output_root}'
+            {output_root} {bad_det_file}'
         os.system(cmd)
 
-        if not outfile.is_file():
-            logging.warning('ME background file was not created ({})'.format(outfile))
+        output = list_items(destination,itype='file',include_and=[file_name,'_bkg'],ext=ext)
+
+        if not output:
+            logging.warning('ME background file was not created ({})'.format(output))
             return
 
-    return outfile
+    return output
+
+# =====================================================================
+# ===================== LE functions ==================================
+# =====================================================================
 
 def le_cal(full_exp_dir,out_dir=pathlib.Path.cwd(),override=False):
     '''
@@ -2653,7 +2671,7 @@ def le_screen(full_exp_dir,recon_evt_file=None,gti_file=None,
     # -----------------------------------------------------------------
 
     # Initializing outfile
-    outfile=destination/'{}_LE_evt_screen.fits'.format(exp_ID)
+    outfile = destination/'{}_LE_evt_screen.fits'.format(exp_ID)
 
     compute = True
     if outfile.is_file():
@@ -2772,6 +2790,7 @@ def le_lc(full_exp_dir,screen_evt_file=None,
     compute = True
     if lc_test:
         logging.info('LE lightcurve already exists')
+        output = lc_test
         compute = False  
 
     if compute or override:
@@ -2798,7 +2817,7 @@ def le_lc(full_exp_dir,screen_evt_file=None,
         with open(pathlib.Path(output).with_suffix('.txt'),'w') as tmp:
             tmp.write(str(output)+'\n')
     
-    return pathlib.Path(output)
+    return output
 
 def le_spec(full_exp_dir,screen_evt_file=None,
     user_det_ids="0,2-4,6-10,12,14,20,22-26,28,30,32,34-36,38-42,44,46,52,54-58,60-62,64,66-68,70-74,76,78,84,86,88-90,92-94",
@@ -2893,6 +2912,7 @@ def le_spec(full_exp_dir,screen_evt_file=None,
     compute = True
     if test_spec:
         logging.info('LE energy spectrum already exist')
+        output = test_spec
         compute = False  
 
     if compute or override:
@@ -3041,12 +3061,12 @@ def le_bkg(full_exp_dir,ascii_file,screen_evt_file=None,
         logging.info('File in the input list has not any recognizable format')
         return 
     output_root = destination/(file_name+'_bkg')
-    outfile = destination/(file_name+'_bkg'+ext)
+    output = list_items(destination,itype='file',include_and=[file_name,'_bkg'],ext=ext)
     # -----------------------------------------------------------------
 
     compute = True
-    if not outfile.is_file():
-        logging.info('{} already exists.'.format(outfile))
+    if output:
+        logging.info('{} already exists.'.format(output))
       
     if compute or override:
         # Running lebkgmap  
@@ -3054,12 +3074,14 @@ def le_bkg(full_exp_dir,ascii_file,screen_evt_file=None,
             {minpi} {maxpi} {destination/output_root}'
         os.system(cmd)
 
-        if not outfile.is_file():
+        output = list_items(destination,itype='file',include_and=[file_name,'_bkg'],ext=ext)
+
+        if not output:
             logging.warning('LE background file was not created ({})'.\
-                format(outfile))
+                format(output))
             return
 
-    return outfile
+    return output
 
 def le_rsp(full_exp_dir,energy_spectrum_file,
         out_dir=pathlib.Path.cwd(),override=False):

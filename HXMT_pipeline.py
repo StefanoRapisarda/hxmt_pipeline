@@ -179,7 +179,7 @@ for i,proposal in enumerate(proposals):
         logging.info('-'*80)
 
         # Listing exposure folders (Level3)
-        exposures = list_items(observation,exclude_or='ACS')
+        exposures = list_items(observation,exclude_or=['ACS','AUX'])
         if type(exposures) != list: exposures = [exposures]
 
         # Checking ACS and AUX folders
@@ -257,6 +257,7 @@ for i,proposal in enumerate(proposals):
                     # 4b) Computing lightcurve background
                     if helc:
                         helc_bkg = he_bkg(wf,helc,override=override, out_dir=rdf)
+                        print(helc_bkg)
                         if helc_bkg:
                             logging.info('4b) Lightcurve background successfully computed')
                         else:
